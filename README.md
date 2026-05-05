@@ -1,0 +1,1 @@
+# Grupo12_Cesana-Lorenzo_ia_2026
