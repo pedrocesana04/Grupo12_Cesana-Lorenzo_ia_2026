@@ -99,6 +99,7 @@ class Entrega1(SearchProblem):
                 sedimentarias = list(estado[5])
                 sedimentarias.remove(estado[0])
                 estado[5] = tuple(sedimentarias)
+            estado[3] += 1
             estado[1] -= 3
         elif accion == "depositar":
             estado[3] = 0
@@ -148,7 +149,7 @@ class Entrega1(SearchProblem):
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
     problem = Entrega1(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias)
     result = astar(problem, graph_search=True).path()
-    return [accion[0]for accion in result]
+    return [accion[0]for accion in result if accion[0] is not None]
 
 
 def main():
