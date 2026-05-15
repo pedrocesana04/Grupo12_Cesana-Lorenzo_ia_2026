@@ -2,4 +2,6 @@
 name = "grupo12-cesana-lorenzo-ia-2026"
 version = "0.1.0"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "simpleai>=0.8.3",
+]
