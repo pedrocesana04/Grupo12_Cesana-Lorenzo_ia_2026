@@ -16,7 +16,7 @@ SOBREMARCHAS = ((0,-2), (-2,0), (0,2), (2,0))
 class Entrega1(SearchProblem):
     def __init__ (self, rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
 
-        self.zonas_sombra = [(0, 1), (0, 2)],
+        self.zonas_sombra = zonas_sombra
         taladro = None
         cargas = 0
 
@@ -40,8 +40,8 @@ class Entrega1(SearchProblem):
                 if taladro != "termico":
                     available_actions.append(("equipar", "termico"))
             if posicion_rover in muestras_sedimentarias:
-                if taladro != "percusión":
-                    available_actions.append(("equipar", "percusión"))
+                if taladro != "percusion":
+                    available_actions.append(("equipar", "percusion"))
 
             # Depositar cargas
             if cargas == 2:
@@ -61,7 +61,7 @@ class Entrega1(SearchProblem):
                     if taladro == "termico":
                         available_actions.append(("recolectar", "ignea"))
                 if posicion_rover in muestras_sedimentarias:
-                    if taladro == "percusión":
+                    if taladro == "percusion":
                         available_actions.append(("recolectar", "sedimentaria"))
 
         if bateria >= 4:
@@ -135,6 +135,7 @@ class Entrega1(SearchProblem):
         distancias_manhattan = []
         max_distancia = 0
         cambio_taladro = 0
+        costo_recarga = 0
         for muestra in muestras:
             distancia = abs(posicion_rover[0] - muestra[0]) + abs(posicion_rover[1] - muestra[1])
             distancias_manhattan.append(distancia)
@@ -142,9 +143,11 @@ class Entrega1(SearchProblem):
             max_distancia = max(distancias_manhattan)
         if len(muestras_igneas) == 0 and taladro == "termico":
             cambio_taladro = 3
-        elif len(muestras_sedimentarias) == 0 and taladro == "percusión":
+        elif len(muestras_sedimentarias) == 0 and taladro == "percusion":
             cambio_taladro = 3
-        return cargas + len(muestras) * 2 + max_distancia / 2 + cambio_taladro
+        if max_distancia >= bateria:
+            costo_recarga = 4
+        return cargas + len(muestras) * 2 + max_distancia / 2 + cambio_taladro + costo_recarga
 
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
     problem = Entrega1(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias)
