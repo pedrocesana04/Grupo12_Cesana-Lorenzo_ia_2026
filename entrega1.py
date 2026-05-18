@@ -128,32 +128,43 @@ class Entrega1(SearchProblem):
         elif accion == "recargar":
             return 4
 
+        return 1
+
     def heuristic(self,state):
         posicion_rover, bateria, taladro, cargas, muestras_igneas, muestras_sedimentarias = state
         muestras = muestras_igneas + muestras_sedimentarias
-        distancias_manhattan = []
-        distancia_camino = 0
-        cambio_taladro = 0
-        costo_recarga = 0
+        distancias = []
+        distancia_camino = cambio_taladro = costo_recarga = 0
+
+        #Heuristica con distancias
         for muestra in muestras:
-            distancia = abs(posicion_rover[0] - muestra[0]) + abs(posicion_rover[1] - muestra[1])
+            distancia = distancia_manhattan(posicion_rover, muestra)
             posicion = muestra
-            distancias_manhattan.append((distancia, posicion))
+            distancias.append((distancia, posicion))
 
-        if len(distancias_manhattan) != 0:
-            distancias_manhattan.sort(key=lambda x: x[0])
-            distancia_camino += abs(posicion_rover[0] - muestras[0][0]) + abs(posicion_rover[1] - muestras[0][1])
-            for i in range(len(distancias_manhattan) - 1):
-                distancia_camino += abs(distancias_manhattan[i][1][0] - distancias_manhattan[i+1][1][0]) + abs(distancias_manhattan[i][1][1] - distancias_manhattan[i+1][1][1])
+        if len(distancias) != 0:
+            distancias.sort(key=lambda x: x[0])
+            distancia_camino += distancia_manhattan(posicion_rover, muestras[0])
+            for i in range(len(distancias) - 1):
+                distancia_camino += distancia_manhattan(distancias[i][1], distancias[i+1][1])
 
+        if distancia_camino >= bateria:
+            costo_recarga = 4
+
+        #En caso de cambio de taladro
         if len(muestras_igneas) == 0 and taladro == "termico":
             cambio_taladro = 3
         elif len(muestras_sedimentarias) == 0 and taladro == "percusion":
             cambio_taladro = 3
 
-        if distancia_camino >= bateria:
-            costo_recarga = 4
-        return cargas + len(muestras) * 3 + distancia_camino/2 + cambio_taladro + costo_recarga
+        costo_muestras = len(muestras) * 3 #Sale 2 agarrar cada muestra y 1 soltarlas
+        costo_distancia = distancia_camino / 2 #Se puede recorrer toda la distancia en mitad de tiempo (gasta mas bateria)
+        costo_cargas = cargas * 1 #Si tiene cargas en el momento, gasta 1 para tirar a cada una
+
+        return costo_cargas + costo_muestras + costo_distancia + cambio_taladro + costo_recarga
+
+def distancia_manhattan(p0, p1):
+    return abs(p0[0] - p1[0]) + abs(p0[1] - p1[1])
 
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
     problem = Entrega1(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias)
