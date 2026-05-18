@@ -12,7 +12,6 @@ SOBREMARCHAS = ((0,-2), (-2,0), (0,2), (2,0))
 
 # todas las coordenadas son en formato (fila, columna)
 
-
 class Entrega1(SearchProblem):
     def __init__ (self, rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
 
@@ -133,21 +132,28 @@ class Entrega1(SearchProblem):
         posicion_rover, bateria, taladro, cargas, muestras_igneas, muestras_sedimentarias = state
         muestras = muestras_igneas + muestras_sedimentarias
         distancias_manhattan = []
-        max_distancia = 0
+        distancia_camino = 0
         cambio_taladro = 0
         costo_recarga = 0
         for muestra in muestras:
             distancia = abs(posicion_rover[0] - muestra[0]) + abs(posicion_rover[1] - muestra[1])
-            distancias_manhattan.append(distancia)
+            posicion = muestra
+            distancias_manhattan.append((distancia, posicion))
+
         if len(distancias_manhattan) != 0:
-            max_distancia = max(distancias_manhattan)
+            distancias_manhattan.sort(key=lambda x: x[0])
+            distancia_camino += abs(posicion_rover[0] - muestras[0][0]) + abs(posicion_rover[1] - muestras[0][1])
+            for i in range(len(distancias_manhattan) - 1):
+                distancia_camino += abs(distancias_manhattan[i][1][0] - distancias_manhattan[i+1][1][0]) + abs(distancias_manhattan[i][1][1] - distancias_manhattan[i+1][1][1])
+
         if len(muestras_igneas) == 0 and taladro == "termico":
             cambio_taladro = 3
         elif len(muestras_sedimentarias) == 0 and taladro == "percusion":
             cambio_taladro = 3
-        if max_distancia >= bateria:
+
+        if distancia_camino >= bateria:
             costo_recarga = 4
-        return cargas + len(muestras) * 2 + max_distancia / 2 + cambio_taladro + costo_recarga
+        return cargas + len(muestras) * 3 + distancia_camino/2 + cambio_taladro + costo_recarga
 
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
     problem = Entrega1(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias)
