@@ -152,10 +152,15 @@ class Entrega1(SearchProblem):
             costo_recarga = 4
 
         #En caso de cambio de taladro
-        if len(muestras_igneas) == 0 and taladro == "termico":
-            cambio_taladro = 3
-        elif len(muestras_sedimentarias) == 0 and taladro == "percusion":
-            cambio_taladro = 3
+        if len(muestras_igneas) > 0 and len(muestras_sedimentarias) > 0:
+            if taladro is None:
+                cambio_taladro += 6
+            else:
+                cambio_taladro += 3
+        elif len(muestras_igneas) > 0:
+            if taladro != "termico": cambio_taladro = 3
+        elif len(muestras_sedimentarias) > 0:
+            if taladro != "percusion": cambio_taladro = 3
 
         costo_muestras = len(muestras) * 3 #Sale 2 agarrar cada muestra y 1 soltarlas
         costo_distancia = distancia_camino / 2 #Se puede recorrer toda la distancia en mitad de tiempo (gasta mas bateria)
