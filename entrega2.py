@@ -1,6 +1,6 @@
 import itertools
-from itertools import combinations
-from sys import implementation
+from simpleai.search import CspProblem, backtrack, min_conflicts
+
 
 def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
     variables = []
@@ -9,13 +9,7 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
     global SIZE
     SIZE = camp_size
 
-    for _ in range(habs): variables.append("hab")
-    for _ in range(generators): variables.append("gen")
-    for _ in range(labs): variables.append("lab")
-    for _ in range(deposits): variables.append("dep")
-    for _ in range(airlocks): variables.append("air")
-
-    dominios = []
+    dominios = {}
 
     celdas_borde = []
     for col in range(camp_size[1]):
@@ -39,23 +33,38 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
 
     celdas_utiles = celdas_internas + celdas_borde
 
-    dominios["hab"] = celdas_internas
-    dominios["air"] = celdas_borde
-
-    for tipo in ("gen", "lab", "dep"):
-        dominios[tipo] = celdas_utiles
+    for i in range(habs):
+        variables.append(f"hab{i}")
+        dominios[f"hab{i}"] = celdas_internas
+    for i in range(generators):
+        variables.append(f"gen{i}")
+        dominios[f"gen{i}"] = celdas_utiles
+    for i in range(labs):
+        variables.append(f"lab{i}")
+        dominios[f"lab{i}"] = celdas_utiles
+    for i in range(deposits):
+        variables.append(f"dep{i}")
+        dominios[f"dep{i}"] = celdas_utiles
+    for i in range(airlocks):
+        variables.append(f"air{i}")
+        dominios[f"air{i}"] = celdas_borde
 
     restricciones = []
     for mod1, mod2 in itertools.combinations(variables, 2):
-        restricciones.append((mod1, mod2), diferentes)
-        restricciones.append((mod1, mod2), adyacencia_generador_habitacion)
-        restricciones.append((mod1, mod2), adyacencia_generadores)
-    restricciones.append(variables, adyacente_libre)
+        restricciones.append(((mod1, mod2), diferentes))
+        restricciones.append(((mod1, mod2), adyacencia_generador_habitacion))
+        restricciones.append(((mod1, mod2), adyacencia_generadores))
+        if mod1.startswith("hab") and mod2.startswith("dep"):
+            restricciones.append(((mod1, mod2), adyacencia_laboratorio_deposito))
+    for hab in variables:
+        if hab.startswith("hab"):
+            tupla = (hab,) + tuple(variables)
+            restricciones.append((tupla, adyacente_libre))
 
+    problem = CspProblem(variables, dominios, restricciones)
+    result = min_conflicts(problem)
 
-
-
-    return None
+    return result
 
 
 #R1: solo un modulo por celda
@@ -71,37 +80,42 @@ def adyacente(elem1, elem2):
 
 #R5: generador no puede ser adyacente a una habitacion
 def adyacencia_generador_habitacion(variables, values):
-    if "hab" in variables and "gen" in variables:
+    if any(v.startswith("hab") for v in variables) and any(v.startswith("gen") for v in variables):
         return not adyacente(values[0], values[1])
+    return True
 
 #R6: generadores no adyacentes
 def adyacencia_generadores(variables, values):
-    if variables.count("gen") == 2:
+    if sum(v.startswith("gen") for v in variables) == 2:
         return not adyacente(values[0], values[1])
+    return True
 
-#R7: laboratorio es adyacente a un deposito
+#R7: laboratorio es adyacente a un deposito VER
 def adyacencia_laboratorio_deposito(variables, values):
-    if "lab" in variables and "dep" in variables:
+    if any(v.startswith("lab") for v in variables) and any(v.startswith("dep") for v in variables):
         return adyacente(values[0], values[1])
+    return False
 
 #R8: debe haber una celda libre adyacente a una habitacion
 def adyacente_libre(variables, values):
-    posibilidades = [
-        (0, -1),
-        (0, 1),
-        (-1, 0),
-        (1, 0),
-    ]
+    posibilidades = [(0, -1), (0, 1), (-1, 0), (1, 0)]
 
-    for i, variable in enumerate(variables):
-        if "hab" == variable:
-            contador = 0
-            for movimiento in posibilidades:
-                nuevo_movimiento = values[i] + movimiento
-                if 0 <= nuevo_movimiento[0] < SIZE[0] and 0 <= nuevo_movimiento[1] < SIZE[1]:
-                    if nuevo_movimiento not in CRATERS and nuevo_movimiento not in values:
-                        contador += 1
-
-            if
-
+    for movimiento in posibilidades:
+        nx = values[0][0] + movimiento[0]
+        ny = values[0][1] + movimiento[1]
+        nuevo_movimiento = (nx, ny)
+        if 0 <= nuevo_movimiento[0] < SIZE[0] and 0 <= nuevo_movimiento[1] < SIZE[1]:
+            if nuevo_movimiento not in CRATERS and nuevo_movimiento not in values:
+                return True
     return False
+
+if __name__ == "__main__":
+    resultado = build_camp(
+        camp_size=(5, 6),
+        habs=2,
+        generators=1,
+        labs=1,
+        deposits=2,
+        airlocks=1,
+        craters=[(2, 2), (2, 3)],
+    )
